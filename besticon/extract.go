@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"maps"
 	"net/url"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -53,14 +54,8 @@ func findIconLinks(siteURL *url.URL, html []byte) ([]string, error) {
 		}
 	}
 
-	// Turn unique keys into array
-	var result []string
-	for u := range links {
-		result = append(result, u)
-	}
-	sort.Strings(result)
-
-	return result, nil
+	// Turn unique keys into a sorted array.
+	return slices.Sorted(maps.Keys(links)), nil
 }
 
 // What is the baseURL for this doc?
