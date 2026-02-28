@@ -26,7 +26,7 @@ deploy:
 	heroku config:set DEPLOYED_AT=`date +%s`
 
 install:
-	go get ./...
+	go install ./...
 
 run_server:
 	go build -tags netgo -ldflags '-s -w' -o bin/iconserver github.com/mat/besticon/v3/besticon/iconserver
@@ -42,7 +42,7 @@ coverage_iconserver:
 	go test -coverprofile=coverage.out -covermode=count github.com/mat/besticon/v3/besticon/iconserver && go tool cover -html=coverage.out && unlink coverage.out
 
 test_websites:
-	go get ./...
+	go mod download
 	cat besticon/testdata/websites.txt | xargs -P 10 -n 1  besticon
 
 minify_css:
