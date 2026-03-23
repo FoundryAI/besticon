@@ -31,6 +31,7 @@ func TestGetIndex(t *testing.T) {
 	assertStringEquals(t, "text/html; charset=utf-8", w.Header().Get("Content-Type"))
 
 	assertStringContains(t, w.Body.String(), "<title>The Favicon Finder</title>")
+	assertStringContains(t, w.Body.String(), "/icon?url=github.com&amp;size=80..120..200")
 }
 
 func TestGetIcons(t *testing.T) {
@@ -48,10 +49,15 @@ func TestGetIcons(t *testing.T) {
 	assertStringEquals(t, "text/html; charset=utf-8", w.Header().Get("Content-Type"))
 
 	assertStringContains(t, w.Body.String(), "Icons on apple.com")
+	assertStringContains(t, w.Body.String(), "URL API")
+	assertStringContains(t, w.Body.String(), "Best Icon URL")
+	assertStringContains(t, w.Body.String(), "JSON")
+	assertStringContains(t, w.Body.String(), "/icon?url=apple.com&amp;size=80..120..200")
+	assertStringContains(t, w.Body.String(), "/allicons.json?url=apple.com")
 
-	assertStringContains(t, w.Body.String(), "<img src='https://www.apple.com/favicon.ico'")
-	assertStringContains(t, w.Body.String(), "<a href='https://www.apple.com/favicon.ico'>")
-	assertStringContains(t, w.Body.String(), "<td class='dimensions'>64x64</td>")
+	assertStringContains(t, w.Body.String(), `<img src="https://www.apple.com/favicon.ico"`)
+	assertStringContains(t, w.Body.String(), `<a href="https://www.apple.com/favicon.ico">`)
+	assertStringContains(t, w.Body.String(), `<td class="dimensions">64x64</td>`)
 }
 
 func TestGetIcon(t *testing.T) {
@@ -197,7 +203,7 @@ func TestGetPopular(t *testing.T) {
 	assertStringEquals(t, "200", fmt.Sprintf("%d", w.Code))
 	assertStringEquals(t, "text/html; charset=utf-8", w.Header().Get("Content-Type"))
 
-	assertStringContains(t, w.Body.String(), `Icon Examples`)
+	assertStringContains(t, w.Body.String(), `Icon examples`)
 	assertStringContains(t, w.Body.String(), `github.com`)
 }
 

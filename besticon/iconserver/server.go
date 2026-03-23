@@ -307,9 +307,8 @@ func startServer(port string, address string) {
 		registerHandler("/icons", s.iconsHandler)
 		registerHandler("/popular", s.popularHandler)
 
-		serveAsset("/pure-0.5.0-min.css", "pure-0.5.0-min.css", oneYear)
-		serveAsset("/grids-responsive-0.5.0-min.css", "grids-responsive-0.5.0-min.css", oneYear)
-		serveAsset("/main-min.css", "main-min.css", oneYear)
+		serveAsset("/pico.min.css", "pico.min.css", oneYear)
+		serveAsset("/site.css", "site.css", oneMonth)
 
 		serveAsset("/icon.svg", "icon.svg", oneYear)
 		serveAsset("/favicon.ico", "favicon.ico", oneYear)
@@ -357,6 +356,7 @@ func corsHandler(mux http.HandlerFunc) http.Handler {
 
 const (
 	cacheControl = "Cache-Control"
+	oneMonth     = 30 * 24 * time.Hour
 	oneYear      = 365 * 24 * time.Hour
 )
 

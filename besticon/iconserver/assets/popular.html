@@ -7,9 +7,8 @@
 
   <title>Favicon Examples</title>
 
-  <link rel="stylesheet" href="./pure-0.5.0-min.css">
-  <link rel="stylesheet" href="./grids-responsive-0.5.0-min.css">
-  <link rel="stylesheet" href="./main-min.css">
+  <link rel="stylesheet" href="./pico.min.css">
+  <link rel="stylesheet" href="./site.css">
 
   <meta property="og:title"       content="The Favicon Finder" />
   <meta property="og:description" content="Favicon Examples" />
@@ -19,68 +18,80 @@
 </head>
 
 <body>
-  <div id="layout">
+  <main class="container">
+    <header>
+      <p class="eyebrow">Besticon demo</p>
+      <hgroup>
+        <h1>
+          <a href="/">
+            <span>The Favicon Finder</span>
+            <img class="logo" src="./icon.svg" alt="Site logo">
+          </a>
+        </h1>
+        <p>A service for finding icons on web sites</p>
+      </hgroup>
+    </header>
 
-    <div id="main">
-      <div class="header">
-        <div class="title">
-          <h1><a href="/" class="homelink">The Favicon Finder
-            <img class="logo" src="./icon.svg" alt='Site logo'></a>
-          </h1>
-        </div>
-        <h2>A service finding icons on web sites</h2>
-      </div>
+    <article class="search-panel">
+      <h2>Icon examples</h2>
+      <p>Adjust the preview size to compare the returned icon quality across a few sites.</p>
 
-      <div class="content">
+      <form action="/popular" method="GET">
+        <fieldset class="search-row popular-controls" role="group">
+          <input
+            name="iconsize"
+            type="number"
+            placeholder="Icon size"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            title='Icons are rendered at retina resolution below, meaning this size / 2.'
+            min="0"
+            max="500"
+            step="4"
+            value="{{.IconSize}}">
+          <button type="submit">Update size</button>
+        </fieldset>
+      </form>
+    </article>
 
-        <h2 class="content-subhead">Icon Examples</h2>
-
-        <form action="/popular" method="GET" class="pure-form">
-          <fieldset>
-            <label for="iconsize">
-              <input name="iconsize" type="number" placeholder="Icon Size" autocomplete="off" autocorrect="off"
-              autocapitalize="off" spellcheck="false"
-              title='Honestly, icons are actually rendered at "retina" resolution below meaning this size / 2.'
-              min="0" max="500" step="4"
-              value="{{.IconSize}}">
-            </label>
-
-            <button type="submit" class="pure-button pure-button-primary">Set icon size</button>
-          </fieldset>
-        </form>
-
-        <table class="pure-table pure-table-horizontal">
+    <section>
+      <div class="table-wrap">
+        <table class="popular-table">
           <thead>
             <tr>
               <th>Site</th>
               <th>40</th>
               <th>80</th>
               <th>{{$.IconSize}}</th>
-              <th>&nbsp;</th>
+              <th>Details</th>
             </tr>
           </thead>
-          {{range $url := .URLs}}
-          <tr class='icon'>
-            <td>{{$url}}</td>
-            <td align='center'><img src="/icon?url={{$url}}&amp;size=40" alt='' style='max-width: 20px'></td>
-            <td align='center'><img src="/icon?url={{$url}}&amp;size=80" alt='' style='max-width: 40px'></td>
-            <td align='center'><img src="/icon?url={{$url}}&amp;size={{$.IconSize}}" alt='' style='max-width: {{$.DisplaySize}}px'></td>
-            <td><a href="/icons?url={{$url}}">Details</a></td>
-          </tr>
-          {{end}}
+          <tbody>
+            {{range $url := .URLs}}
+            <tr class="icon">
+              <th scope="row">{{$url}}</th>
+              <td class="icon-cell"><img src="/icon?url={{$url}}&amp;size=40" alt="" style="max-width: 20px"></td>
+              <td class="icon-cell"><img src="/icon?url={{$url}}&amp;size=80" alt="" style="max-width: 40px"></td>
+              <td class="icon-cell"><img src="/icon?url={{$url}}&amp;size={{$.IconSize}}" alt="" style="max-width: {{$.DisplaySize}}px"></td>
+              <td><a href="/icons?url={{$url}}#result">Details</a></td>
+            </tr>
+            {{end}}
+          </tbody>
         </table>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <div class="footer l-box">
-    <p>
-      <a href='/'>The Favicon Finder</a> &dash; in search for icons since 2015.
-      Written in <a href='http://golang.org'>Go</a>,
-      source on <a href="https://github.com/mat/besticon">GitHub</a>.
-      &copy; 2015-2023 <a href='http://www.better-idea.org'>Matthias Lüdtke</a>.
-    </p>
-  </div>
+    <footer>
+      <small>
+        <a href="/">The Favicon Finder</a> in search for icons since 2015.
+        Written in <a href="http://golang.org">Go</a>,
+        source on <a href="https://github.com/mat/besticon">GitHub</a>.
+        &copy; 2015-2023 <a href="http://www.better-idea.org">Matthias Lüdtke</a>.
+      </small>
+    </footer>
+  </main>
 
 </body>
 </html>
