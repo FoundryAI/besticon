@@ -462,11 +462,16 @@ var popularHTML *template.Template
 var notFoundHTML *template.Template
 
 var funcMap = template.FuncMap{
-	"ImgWidth": imgWidth,
+	"CurrentYear": currentYear,
+	"ImgWidth":    imgWidth,
 }
 
 func imgWidth(i *besticon.Icon) int {
 	return i.Width / 2.0
+}
+
+func currentYear() int {
+	return time.Now().Year()
 }
 
 func (s *server) newIconFinder() *besticon.IconFinder {
