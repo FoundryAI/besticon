@@ -142,6 +142,7 @@ There is not a lot to configure, but these environment variables exist
 | `POPULAR_SITES`          | Comma-separated list of domains used on /popular page                                                                                                                                      | some random web sites      |
 | `PORT`                   | HTTP server port                                                                                                                                                                           | 8080                       |
 | `SERVER_MODE`            | Set to `download` to proxy downloads through besticon or `redirect` to let browser to download instead. (example at [#40](https://github.com/mat/besticon/pull/40#issuecomment-528325450)) | `redirect`                 |
+| `SERVE_ASSETS_FROM_DISK` | Serve embedded assets from disk on each request.                                                                                                                                           | false                      |
 
 ## Contributors
 

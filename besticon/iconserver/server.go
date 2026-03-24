@@ -7,13 +7,16 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"runtime"
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mat/besticon/v3/besticon"
@@ -34,9 +37,9 @@ type server struct {
 
 func (s *server) indexHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "" || r.URL.Path == "/" {
-		renderHTMLTemplate(w, 200, indexHTML, nil)
+		renderHTMLTemplate(w, 200, templateFromAsset("index.html", "index.html"), nil)
 	} else {
-		renderHTMLTemplate(w, 404, notFoundHTML, nil)
+		renderHTMLTemplate(w, 404, templateFromAsset("not_found.html", "not_found.html"), nil)
 	}
 }
 
@@ -57,13 +60,13 @@ func (s *server) iconsHandler(w http.ResponseWriter, r *http.Request) {
 	icons, e := finder.FetchIcons(url)
 	switch {
 	case e != nil:
-		renderHTMLTemplate(w, 404, iconsHTML, pageInfo{URL: url, Error: e})
+		renderHTMLTemplate(w, 404, templateFromAsset("icons.html", "icons.html"), pageInfo{URL: url, Error: e})
 	case len(icons) == 0:
 		errNoIcons := errors.New("this poor site has no icons at all :-(")
-		renderHTMLTemplate(w, 404, iconsHTML, pageInfo{URL: url, Error: errNoIcons})
+		renderHTMLTemplate(w, 404, templateFromAsset("icons.html", "icons.html"), pageInfo{URL: url, Error: errNoIcons})
 	default:
 		addCacheControl(w, s.cacheDuration)
-		renderHTMLTemplate(w, 200, iconsHTML, pageInfo{Icons: icons, URL: url})
+		renderHTMLTemplate(w, 200, templateFromAsset("icons.html", "icons.html"), pageInfo{Icons: icons, URL: url})
 	}
 }
 
@@ -135,7 +138,7 @@ func (s *server) popularHandler(w http.ResponseWriter, r *http.Request) {
 		iconSize,
 		iconSize / 2,
 	}
-	renderHTMLTemplate(w, 200, popularHTML, pageInfo)
+	renderHTMLTemplate(w, 200, templateFromAsset("popular.html", "popular.html"), pageInfo)
 }
 
 const (
@@ -396,7 +399,7 @@ func addCacheControl(w http.ResponseWriter, maxAge time.Duration) {
 
 func serveAsset(path string, assetPath string, maxAge time.Duration) {
 	registerHandler(path, func(w http.ResponseWriter, r *http.Request) {
-		f, err := assets.Assets.Open(assetPath)
+		f, err := assetFS().Open(assetPath)
 		if err != nil {
 			panic(err)
 		}
@@ -441,30 +444,24 @@ func main() {
 	startServer(port, address)
 }
 
-func init() {
-	indexHTML = templateFromAsset("index.html", "index.html")
-	iconsHTML = templateFromAsset("icons.html", "icons.html")
-	popularHTML = templateFromAsset("popular.html", "popular.html")
-	notFoundHTML = templateFromAsset("not_found.html", "not_found.html")
-}
-
 func templateFromAsset(assetPath, templateName string) *template.Template {
-	data, err := assets.Assets.ReadFile(assetPath)
+	if !getTrueFromEnv("SERVE_ASSETS_FROM_DISK") {
+		return cachedTemplate(assetPath, templateName)
+	}
+
+	data, err := fs.ReadFile(assetFS(), assetPath)
 	if err != nil {
 		panic(err)
 	}
 	return template.Must(template.New(templateName).Funcs(funcMap).Parse(string(data)))
 }
 
-var indexHTML *template.Template
-var iconsHTML *template.Template
-var popularHTML *template.Template
-var notFoundHTML *template.Template
-
 var funcMap = template.FuncMap{
 	"CurrentYear": currentYear,
 	"ImgWidth":    imgWidth,
 }
+
+var templateCache sync.Map
 
 func imgWidth(i *besticon.Icon) int {
 	return i.Width / 2.0
@@ -501,6 +498,37 @@ func getenvOrFallback(key string, fallbackValue string) string {
 		return value
 	}
 	return fallbackValue
+}
+
+func cachedTemplate(assetPath, templateName string) *template.Template {
+	cacheKey := assetPath + ":" + templateName
+	if cached, ok := templateCache.Load(cacheKey); ok {
+		return cached.(*template.Template)
+	}
+
+	data, err := fs.ReadFile(assetFS(), assetPath)
+	if err != nil {
+		panic(err)
+	}
+
+	templ := template.Must(template.New(templateName).Funcs(funcMap).Parse(string(data)))
+	actual, _ := templateCache.LoadOrStore(cacheKey, templ)
+	return actual.(*template.Template)
+}
+
+func assetFS() fs.FS {
+	if getTrueFromEnv("SERVE_ASSETS_FROM_DISK") {
+		return os.DirFS(assetDir())
+	}
+	return assets.Assets
+}
+
+func assetDir() string {
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("could not resolve asset directory")
+	}
+	return filepath.Join(filepath.Dir(thisFile), "assets")
 }
 
 func includesString(arr []string, str string) bool {

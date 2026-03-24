@@ -30,7 +30,7 @@ install:
 
 run_server:
 	go build -tags netgo -ldflags '-s -w' -o bin/iconserver github.com/mat/besticon/v3/besticon/iconserver
-	PORT=3000 DEPLOYED_AT=`date +%s` HOST_ONLY_DOMAINS=* POPULAR_SITES=bing.com,github.com,instagram.com,reddit.com ./bin/iconserver
+	PORT=3000 DEPLOYED_AT=`date +%s` HOST_ONLY_DOMAINS=* POPULAR_SITES=bing.com,github.com,instagram.com,reddit.com SERVE_ASSETS_FROM_DISK=true ./bin/iconserver
 
 coverage_besticon:
 	go test -coverprofile=coverage.out -covermode=count github.com/mat/besticon/v3/besticon && go tool cover -html=coverage.out && unlink coverage.out
