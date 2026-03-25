@@ -32,6 +32,25 @@ func TestGetIndex(t *testing.T) {
 
 	assertStringContains(t, w.Body.String(), "<title>The Favicon Finder</title>")
 	assertStringContains(t, w.Body.String(), "/icon?url=github.com&amp;size=80..120..200")
+	assertStringContains(t, w.Body.String(), `value="github.com"`)
+}
+
+func TestGetIndexWithDemoSites(t *testing.T) {
+	req, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	s := newTestServer()
+	s.demoSites = []string{"github.com", "render.com"}
+	s.indexHandler(w, req)
+
+	assertStringEquals(t, "200", fmt.Sprintf("%d", w.Code))
+	assertStringContains(t, w.Body.String(), "Try these demo sites:")
+	assertStringContains(t, w.Body.String(), `/icons?url=github.com`)
+	assertStringContains(t, w.Body.String(), `/icons?url=render.com`)
+	assertStringContains(t, w.Body.String(), `value="github.com"`)
 }
 
 func TestGetIcons(t *testing.T) {
@@ -48,6 +67,9 @@ func TestGetIcons(t *testing.T) {
 	assertStringEquals(t, "max-age=2592000", w.Header().Get("Cache-Control"))
 	assertStringEquals(t, "text/html; charset=utf-8", w.Header().Get("Content-Type"))
 
+	assertStringContains(t, w.Body.String(), "Find icons")
+	assertStringContains(t, w.Body.String(), "Enter a domain to inspect the icons found for a web site.")
+	assertStringContains(t, w.Body.String(), `value="apple.com"`)
 	assertStringContains(t, w.Body.String(), "Icons on apple.com")
 	assertStringContains(t, w.Body.String(), "URL API")
 	assertStringContains(t, w.Body.String(), "Best Icon URL")
@@ -58,6 +80,24 @@ func TestGetIcons(t *testing.T) {
 	assertStringContains(t, w.Body.String(), `<img src="https://www.apple.com/favicon.ico"`)
 	assertStringContains(t, w.Body.String(), `<a href="https://www.apple.com/favicon.ico">`)
 	assertStringContains(t, w.Body.String(), `<td class="dimensions">64x64</td>`)
+}
+
+func TestGetIconsRejectsNonDemoSite(t *testing.T) {
+	req, err := http.NewRequest("GET", "/icons?url=example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	s := newTestServer()
+	s.demoSites = []string{"github.com", "render.com"}
+	s.iconsHandler(w, req)
+
+	assertStringEquals(t, "400", fmt.Sprintf("%d", w.Code))
+	assertStringEquals(t, "text/html; charset=utf-8", w.Header().Get("Content-Type"))
+	assertStringContains(t, w.Body.String(), "Try these demo sites:")
+	assertStringContains(t, w.Body.String(), `value="example.com"`)
+	assertStringContains(t, w.Body.String(), "this demo only supports these sites: github.com, render.com")
 }
 
 func TestGetIcon(t *testing.T) {
@@ -73,6 +113,36 @@ func TestGetIcon(t *testing.T) {
 	assertStringEquals(t, "302", fmt.Sprintf("%d", w.Code))
 	assertStringEquals(t, "max-age=2592000", w.Header().Get("Cache-Control"))
 	assertStringEquals(t, "https://www.apple.com/apple-touch-icon.png", w.Header().Get("Location"))
+}
+
+func TestGetIconRejectsNonDemoSite(t *testing.T) {
+	req, err := http.NewRequest("GET", "/icon?url=https://github.com.evil.example/path&size=120", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	s := newTestServer()
+	s.demoSites = []string{"github.com"}
+	s.iconHandler(w, req)
+
+	assertStringEquals(t, "400", fmt.Sprintf("%d", w.Code))
+	assertStringEquals(t, "application/json", w.Header().Get("Content-Type"))
+	assertStringContains(t, w.Body.String(), `"error":"this demo only supports these sites: github.com"`)
+}
+
+func TestGetIconAllowsPathOnDemoSite(t *testing.T) {
+	req, err := http.NewRequest("GET", "/icon?url=https://apple.com/store&size=120", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	s := newTestServer()
+	s.demoSites = []string{"apple.com"}
+	s.iconHandler(w, req)
+
+	assertStringEquals(t, "302", fmt.Sprintf("%d", w.Code))
 }
 
 func TestGetIconWithDownloadMode(t *testing.T) {
@@ -190,21 +260,20 @@ func TestGetAllIcons(t *testing.T) {
 	assertDoesNotExceed(t, len(w.Body.String()), 2000)
 }
 
-func TestGetPopular(t *testing.T) {
-	req, err := http.NewRequest("GET", "/popular", nil)
+func TestGetAllIconsRejectsNonDemoSite(t *testing.T) {
+	req, err := http.NewRequest("GET", "/allicons.json?url=github.com.evil.example", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	w := httptest.NewRecorder()
 	s := newTestServer()
-	s.popularHandler(w, req)
+	s.demoSites = []string{"github.com"}
+	s.alliconsHandler(w, req)
 
-	assertStringEquals(t, "200", fmt.Sprintf("%d", w.Code))
-	assertStringEquals(t, "text/html; charset=utf-8", w.Header().Get("Content-Type"))
-
-	assertStringContains(t, w.Body.String(), `Icon examples`)
-	assertStringContains(t, w.Body.String(), `github.com`)
+	assertStringEquals(t, "400", fmt.Sprintf("%d", w.Code))
+	assertStringEquals(t, "application/json", w.Header().Get("Content-Type"))
+	assertStringContains(t, w.Body.String(), `"error":"this demo only supports these sites: github.com"`)
 }
 
 func TestGetLetterIconPNG(t *testing.T) {

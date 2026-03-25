@@ -7,8 +7,6 @@ services:
     startCommand: ./bin/iconserver
     plan: free
     envVars:
-      - key: POPULAR_SITES
-        value: "github.com,render.com,heroku.com"
       - key: HOST_ONLY_DOMAINS
         value: "*"
       - key: CACHE_SIZE_MB

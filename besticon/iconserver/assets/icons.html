@@ -33,9 +33,11 @@
         </hgroup>
       </header>
 
-      <article class="search-panel" id="result">
-        <h2>Get icons</h2>
-        <form action="/icons#result" method="GET">
+      <article class="search-panel">
+        <h2>Find icons</h2>
+        <p>Enter a domain to inspect the icons found for a web site.</p>
+
+        <form action="/icons" method="GET">
           <fieldset class="search-row" role="group">
             <input
               name="url"
@@ -45,10 +47,17 @@
               autocorrect="off"
               autocapitalize="off"
               spellcheck="false"
-              value="{{.URL}}">
+              value="{{ .FormURL }}">
             <button type="submit">Go</button>
           </fieldset>
         </form>
+
+        {{ if .ExampleSites }}<p class="example-links">
+          <small>
+            Try these demo sites:
+            {{ range $index, $site := .ExampleSites }}{{ if $index }}, {{ end }}<a href="/icons?url={{$site}}">{{$site}}</a>{{ end }}.
+          </small>
+        </p>{{ end }}
 
         {{ with .Error }}<p class="status-message error">{{ . }}</p>{{ end }}
       </article>

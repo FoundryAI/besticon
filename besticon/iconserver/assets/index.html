@@ -34,10 +34,10 @@
       </header>
 
       <article class="search-panel">
-        <h2>Find icon</h2>
+        <h2>Find icons</h2>
         <p>Enter a domain to inspect the icons found for a web site.</p>
 
-        <form action="/icons#result" method="GET">
+        <form action="/icons" method="GET">
           <fieldset class="search-row" role="group">
             <input
               name="url"
@@ -46,19 +46,18 @@
               autocomplete="off"
               autocorrect="off"
               autocapitalize="off"
-              spellcheck="false">
+              spellcheck="false"
+              value="{{ .DefaultURL }}">
             <button type="submit">Go</button>
           </fieldset>
         </form>
 
-        <p class="example-links">
+        {{ if .ExampleSites }}<p class="example-links">
           <small>
-            Try
-            <a href="/icons?url=github.com#result">github.com</a>,
-            <a href="/icons?url=yelp.com#result">yelp.com</a>,
-            or browse <a href="/popular">popular sites</a>.
+            Try these demo sites:
+            {{ range $index, $site := .ExampleSites }}{{ if $index }}, {{ end }}<a href="/icons?url={{$site}}">{{$site}}</a>{{ end }}.
           </small>
-        </p>
+        </p>{{ end }}
       </article>
 
       <section>

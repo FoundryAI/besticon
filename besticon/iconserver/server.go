@@ -30,6 +30,7 @@ import (
 type server struct {
 	maxIconSize     int
 	cacheDuration   time.Duration
+	demoSites       []string
 	hostOnlyDomains []string
 
 	besticon *besticon.Besticon
@@ -37,14 +38,22 @@ type server struct {
 
 func (s *server) indexHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "" || r.URL.Path == "/" {
-		renderHTMLTemplate(w, 200, templateFromAsset("index.html", "index.html"), nil)
+		renderHTMLTemplate(w, 200, templateFromAsset("index.html", "index.html"), pageInfo{DemoSites: s.demoSites})
 	} else {
 		renderHTMLTemplate(w, 404, templateFromAsset("not_found.html", "not_found.html"), nil)
 	}
 }
 
 func (s *server) iconsHandler(w http.ResponseWriter, r *http.Request) {
-	url := r.FormValue(urlParam)
+	url, err := s.demoURLFromRequest(r)
+	if err != nil {
+		renderHTMLTemplate(w, 400, templateFromAsset("icons.html", "icons.html"), pageInfo{
+			URL:       r.FormValue(urlParam),
+			Error:     err,
+			DemoSites: s.demoSites,
+		})
+		return
+	}
 	if len(url) == 0 {
 		http.Redirect(w, r, "/", 302)
 		return
@@ -60,18 +69,22 @@ func (s *server) iconsHandler(w http.ResponseWriter, r *http.Request) {
 	icons, e := finder.FetchIcons(url)
 	switch {
 	case e != nil:
-		renderHTMLTemplate(w, 404, templateFromAsset("icons.html", "icons.html"), pageInfo{URL: url, Error: e})
+		renderHTMLTemplate(w, 404, templateFromAsset("icons.html", "icons.html"), pageInfo{URL: url, Error: e, DemoSites: s.demoSites})
 	case len(icons) == 0:
 		errNoIcons := errors.New("this poor site has no icons at all :-(")
-		renderHTMLTemplate(w, 404, templateFromAsset("icons.html", "icons.html"), pageInfo{URL: url, Error: errNoIcons})
+		renderHTMLTemplate(w, 404, templateFromAsset("icons.html", "icons.html"), pageInfo{URL: url, Error: errNoIcons, DemoSites: s.demoSites})
 	default:
 		addCacheControl(w, s.cacheDuration)
-		renderHTMLTemplate(w, 200, templateFromAsset("icons.html", "icons.html"), pageInfo{Icons: icons, URL: url})
+		renderHTMLTemplate(w, 200, templateFromAsset("icons.html", "icons.html"), pageInfo{Icons: icons, URL: url, DemoSites: s.demoSites})
 	}
 }
 
 func (s *server) iconHandler(w http.ResponseWriter, r *http.Request) {
-	url := r.FormValue("url")
+	url, err := s.demoURLFromRequest(r)
+	if err != nil {
+		writeAPIError(w, 400, err)
+		return
+	}
 	if len(url) == 0 {
 		writeAPIError(w, 400, errors.New("need url parameter"))
 		return
@@ -123,30 +136,16 @@ func (s *server) iconHandler(w http.ResponseWriter, r *http.Request) {
 	s.redirectWithCacheControl(w, r, redirectPath)
 }
 
-func (s *server) popularHandler(w http.ResponseWriter, r *http.Request) {
-	iconSize, err := strconv.Atoi(r.FormValue("iconsize"))
-	if iconSize > s.maxIconSize || iconSize < 0 || err != nil {
-		iconSize = 120
-	}
-
-	pageInfo := struct {
-		URLs        []string
-		IconSize    int
-		DisplaySize int
-	}{
-		strings.Split(os.Getenv("POPULAR_SITES"), ","),
-		iconSize,
-		iconSize / 2,
-	}
-	renderHTMLTemplate(w, 200, templateFromAsset("popular.html", "popular.html"), pageInfo)
-}
-
 const (
 	urlParam = "url"
 )
 
 func (s *server) alliconsHandler(w http.ResponseWriter, r *http.Request) {
-	url := r.FormValue(urlParam)
+	url, err := s.demoURLFromRequest(r)
+	if err != nil {
+		writeAPIError(w, 400, err)
+		return
+	}
 	if len(url) == 0 {
 		errMissingURL := errors.New("need url query parameter")
 		writeAPIError(w, 400, errMissingURL)
@@ -230,9 +229,10 @@ func renderJSONResponse(w http.ResponseWriter, httpStatus int, data any) {
 }
 
 type pageInfo struct {
-	URL   string
-	Icons []besticon.Icon
-	Error error
+	URL       string
+	Icons     []besticon.Icon
+	Error     error
+	DemoSites []string
 }
 
 func (pi pageInfo) Host() string {
@@ -250,6 +250,26 @@ func (pi pageInfo) Best() string {
 		return best.URL
 	}
 	return ""
+}
+
+func (pi pageInfo) ExampleSites() []string {
+	return pi.DemoSites
+}
+
+func (pi pageInfo) DefaultURL() string {
+	if len(pi.DemoSites) > 0 {
+		return pi.DemoSites[0]
+	}
+
+	return "github.com"
+}
+
+func (pi pageInfo) FormURL() string {
+	if strings.TrimSpace(pi.URL) != "" {
+		return pi.URL
+	}
+
+	return pi.DefaultURL()
 }
 
 func renderHTMLTemplate(w http.ResponseWriter, httpStatus int, templ *template.Template, data any) {
@@ -293,6 +313,7 @@ func startServer(port string, address string) {
 	s := &server{
 		maxIconSize:     maxIconSize,
 		cacheDuration:   cacheDuration,
+		demoSites:       normalizedHostListFromEnv("DEMO_SITES"),
 		hostOnlyDomains: strings.Split(os.Getenv("HOST_ONLY_DOMAINS"), ","),
 
 		besticon: besticon.New(opts...),
@@ -308,7 +329,6 @@ func startServer(port string, address string) {
 	if !disableBrowsePages {
 		registerHandler("/", s.indexHandler)
 		registerHandler("/icons", s.iconsHandler)
-		registerHandler("/popular", s.popularHandler)
 
 		serveAsset("/pico.min.css", "pico.min.css", oneYear)
 		serveAsset("/site.css", "site.css", oneMonth)
@@ -471,6 +491,28 @@ func currentYear() int {
 	return time.Now().Year()
 }
 
+func (s *server) demoURLFromRequest(r *http.Request) (string, error) {
+	requestedURL := strings.TrimSpace(r.FormValue(urlParam))
+	if requestedURL == "" {
+		return "", nil
+	}
+
+	if len(s.demoSites) == 0 {
+		return requestedURL, nil
+	}
+
+	host, err := normalizeRequestedHost(requestedURL)
+	if err != nil {
+		return "", errors.New("need a valid demo site URL or hostname")
+	}
+
+	if slices.Contains(s.demoSites, host) {
+		return requestedURL, nil
+	}
+
+	return "", fmt.Errorf("this demo only supports these sites: %s", strings.Join(s.demoSites, ", "))
+}
+
 func (s *server) newIconFinder() *besticon.IconFinder {
 	finder := s.besticon.NewIconFinder()
 	if len(s.hostOnlyDomains) > 0 {
@@ -492,12 +534,54 @@ func stringSliceFromEnv(key string) []string {
 	return strings.Split(value, ",")
 }
 
+func normalizedHostListFromEnv(key string) []string {
+	var hosts []string
+	seen := map[string]struct{}{}
+
+	for _, value := range stringSliceFromEnv(key) {
+		host, err := normalizeRequestedHost(value)
+		if err != nil {
+			continue
+		}
+		if _, ok := seen[host]; ok {
+			continue
+		}
+		seen[host] = struct{}{}
+		hosts = append(hosts, host)
+	}
+
+	return hosts
+}
+
 func getenvOrFallback(key string, fallbackValue string) string {
 	value := os.Getenv(key)
 	if len(strings.TrimSpace(value)) != 0 {
 		return value
 	}
 	return fallbackValue
+}
+
+func normalizeRequestedHost(raw string) (string, error) {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return "", errors.New("empty host")
+	}
+
+	if !strings.Contains(value, "://") {
+		value = "http://" + value
+	}
+
+	parsed, err := url.Parse(value)
+	if err != nil {
+		return "", err
+	}
+
+	host := strings.ToLower(strings.TrimSuffix(parsed.Hostname(), "."))
+	if host == "" {
+		return "", errors.New("missing host")
+	}
+
+	return host, nil
 }
 
 func cachedTemplate(assetPath, templateName string) *template.Template {
