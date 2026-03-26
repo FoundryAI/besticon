@@ -7,7 +7,7 @@ This is a favicon service:
 - Fallback icon generation
 - Docker image & single binary download for [easy hosting](#hosting)
 
-Try out the demo at <https://besticon-demo.herokuapp.com> or find out how to [deploy your own version](#hosting) right now.
+Try out the demo at <https://icons.better-idea.org> or find out how to [deploy your own version](#hosting) right now.
 
 [![Build Status](https://github.com/mat/besticon/actions/workflows/go.yml/badge.svg)](https://github.com/mat/besticon/actions/workflows/go.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/mat/besticon)](https://goreportcard.com/report/github.com/mat/besticon)
@@ -35,12 +35,12 @@ This endpoint always returns an icon image for the given site — it redirects t
 
 | Input URL                                                                                                         | Icon                                                                                                                                           |
 | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| <https://besticon-demo.herokuapp.com/icon?url=yelp.com&size=32..50..120>                                          | ![Icon for yelp.com](https://besticon-demo.herokuapp.com/icon?url=yelp.com&size=32..50..120)                                                   |
-| <https://besticon-demo.herokuapp.com/icon?url=yelp.com&size=64..64..120>                                          | ![Icon for yelp.com](https://besticon-demo.herokuapp.com/icon?url=yelp.com&size=64..64..120)                                                   |
-| <https://besticon-demo.herokuapp.com/icon?url=yelp.com>                                                           | size missing                                                                                                                                   |
-| <https://besticon-demo.herokuapp.com/icon?url=httpbin.org/status/404&size=32..64..120>                            | ![Icon for non-existent page](https://besticon-demo.herokuapp.com/icon?url=httpbin.org/status/404&size=32..64..120)                            |
-| <https://besticon-demo.herokuapp.com/icon?url=httpbin.org/status/404&size=32..64..120&fallback_icon_color=ff0000> | ![Icon for non-existent page](https://besticon-demo.herokuapp.com/icon?url=httpbin.org/status/404&size=32..64..120&fallback_icon_color=ff0000) |
-| <https://besticon-demo.herokuapp.com/icon?url=фминобрнауки.рф&size=32..64..120>                                   | ![Icon with cyrillic letter ф](https://besticon-demo.herokuapp.com/icon?url=фминобрнауки.рф&size=32..64..120)                                  |
+| <https://icons.better-idea.org/icon?url=yelp.com&size=32..50..120>                                          | ![Icon for yelp.com](https://icons.better-idea.org/icon?url=yelp.com&size=32..50..120)                                                   |
+| <https://icons.better-idea.org/icon?url=yelp.com&size=64..64..120>                                          | ![Icon for yelp.com](https://icons.better-idea.org/icon?url=yelp.com&size=64..64..120)                                                   |
+| <https://icons.better-idea.org/icon?url=yelp.com>                                                           | size missing                                                                                                                                   |
+| <https://icons.better-idea.org/icon?url=httpbin.org/status/404&size=32..64..120>                            | ![Icon for non-existent page](https://icons.better-idea.org/icon?url=httpbin.org/status/404&size=32..64..120)                            |
+| <https://icons.better-idea.org/icon?url=httpbin.org/status/404&size=32..64..120&fallback_icon_color=ff0000> | ![Icon for non-existent page](https://icons.better-idea.org/icon?url=httpbin.org/status/404&size=32..64..120&fallback_icon_color=ff0000) |
+| <https://icons.better-idea.org/icon?url=фминобрнауки.рф&size=32..64..120>                                   | ![Icon with cyrillic letter ф](https://icons.better-idea.org/icon?url=фминобрнауки.рф&size=32..64..120)                                  |
 
 ### GET /allicons.json
 
@@ -53,8 +53,8 @@ This endpoint returns all icons for a given site.
 
 #### Examples
 
-- <https://besticon-demo.herokuapp.com/allicons.json?url=github.com>
-- <https://besticon-demo.herokuapp.com/allicons.json?url=github.com&formats=png>
+- <https://icons.better-idea.org/allicons.json?url=github.com>
+- <https://icons.better-idea.org/allicons.json?url=github.com&formats=png>
 
 ## Bugs & limitations
 
@@ -76,11 +76,11 @@ Simple options to host this service are, for example:
 
 A docker image is available at <https://hub.docker.com/r/matthiasluedtke/iconserver/>, generated from the [Dockerfile](https://github.com/mat/besticon/blob/master/Dockerfile) in this repo. I try to keep it updated for every release.
 
-Note that this docker image is not used to run <https://besticon-demo.herokuapp.com> and therefore not well tested.
+Note that this docker image is not used to run <https://icons.better-idea.org> and therefore not well tested.
 
 ## Monitoring
 
-[Prometheus](https://prometheus.io) metrics are exposed under [/metrics](https://besticon-demo.herokuapp.com/metrics). A Grafana dashboard config based on these metrics can be found in [grafana-dashboard.json](https://github.com/mat/besticon/blob/master/grafana-dashboard.json).
+[Prometheus](https://prometheus.io) metrics are exposed under [/metrics](https://icons.better-idea.org/metrics). A Grafana dashboard config based on these metrics can be found in [grafana-dashboard.json](https://github.com/mat/besticon/blob/master/grafana-dashboard.json).
 
 ## Server Executable
 
