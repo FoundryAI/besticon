@@ -5,6 +5,8 @@ name: Docker
 on:
     push:
       branches: [ master ]
+      paths-ignore:
+        - Readme.markdown
 
 jobs:
     build:

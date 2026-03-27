@@ -3,8 +3,12 @@ name: Build + Test
 on:
   push:
     branches: [ master ]
+    paths-ignore:
+      - Readme.markdown
   pull_request:
     branches: [ master ]
+    paths-ignore:
+      - Readme.markdown
 
 jobs:
 
