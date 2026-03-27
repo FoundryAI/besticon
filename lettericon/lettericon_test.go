@@ -110,7 +110,9 @@ func mustColorFromHex(hexColor string) color.Color {
 
 func BenchmarkColorFromHex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		ColorFromHex("#dfdfdf")
+		if _, err := ColorFromHex("#dfdfdf"); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
@@ -133,11 +135,15 @@ func renderPNGBytes(letter string, bgColor color.Color, width int) ([]byte, erro
 }
 
 func BenchmarkRenderPNG(b *testing.B) {
-	RenderPNG("X", DefaultBackgroundColor, 144, io.Discard) // warmup
+	if err := RenderPNG("X", DefaultBackgroundColor, 144, io.Discard); err != nil { // warmup
+		b.Fatal(err)
+	}
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		RenderPNG("X", DefaultBackgroundColor, 144, io.Discard)
+		if err := RenderPNG("X", DefaultBackgroundColor, 144, io.Discard); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 

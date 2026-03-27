@@ -73,13 +73,34 @@ func TestFindColors11(t *testing.T) {
 }
 
 func BenchmarkFindMainColor152x152(b *testing.B) {
-	file, _ := os.Open(testdataDir + "icon02.png.gz")
-	gzReader, _ := gzip.NewReader(file)
-	byts, _ := io.ReadAll(gzReader)
+	file, err := os.Open(testdataDir + "icon02.png.gz")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			b.Fatal(err)
+		}
+	}()
+
+	gzReader, err := gzip.NewReader(file)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer func() {
+		if err := gzReader.Close(); err != nil {
+			b.Fatal(err)
+		}
+	}()
+
+	byts, err := io.ReadAll(gzReader)
+	if err != nil {
+		b.Fatal(err)
+	}
 	imgReader := bytes.NewReader(byts)
 	img, _, err := image.Decode(imgReader)
 	if err != nil {
-		log.Fatal(err)
+		b.Fatal(err)
 	}
 
 	b.ResetTimer()
@@ -94,18 +115,41 @@ func BenchmarkFindMainColor152x152(b *testing.B) {
 			b.Errorf("Wrong color: %s", ColorToHex(col))
 		}
 
-		imgReader.Seek(0, 0)
+		if _, err := imgReader.Seek(0, 0); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
 func BenchmarkFindMainColor57x57(b *testing.B) {
-	file, _ := os.Open(testdataDir + "icon07.png.gz")
-	gzReader, _ := gzip.NewReader(file)
-	byts, _ := io.ReadAll(gzReader)
+	file, err := os.Open(testdataDir + "icon07.png.gz")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			b.Fatal(err)
+		}
+	}()
+
+	gzReader, err := gzip.NewReader(file)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer func() {
+		if err := gzReader.Close(); err != nil {
+			b.Fatal(err)
+		}
+	}()
+
+	byts, err := io.ReadAll(gzReader)
+	if err != nil {
+		b.Fatal(err)
+	}
 	imgReader := bytes.NewReader(byts)
 	img, _, err := image.Decode(imgReader)
 	if err != nil {
-		log.Fatal(err)
+		b.Fatal(err)
 	}
 
 	b.ResetTimer()
@@ -120,7 +164,9 @@ func BenchmarkFindMainColor57x57(b *testing.B) {
 			b.Errorf("Wrong color: %s", ColorToHex(col))
 		}
 
-		imgReader.Seek(0, 0)
+		if _, err := imgReader.Seek(0, 0); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
@@ -138,7 +184,11 @@ func assertFindsRightColor(t *testing.T, fileName string, expectedHexColor strin
 		check(t, err)
 	}
 
-	defer imgReader.Close()
+	defer func() {
+		if err := imgReader.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
 	img, _, err := image.Decode(imgReader)
 	if err != nil {
 		log.Fatal(err)

@@ -337,7 +337,11 @@ func fetchIconsWithVCR(s string) ([]Icon, *IconFinder, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	client.Jar = mustInitCookieJar()
 
@@ -353,7 +357,11 @@ func fetchIconsWithVCR(s string) ([]Icon, *IconFinder, error) {
 func getImageWidthForFile(filename string) int {
 	f, err := os.Open(filename)
 	check(err)
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	icfg, _, err := image.DecodeConfig(f)
 	check(err)

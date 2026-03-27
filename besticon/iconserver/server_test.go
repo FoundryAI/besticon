@@ -146,7 +146,9 @@ func TestGetIconAllowsPathOnDemoSite(t *testing.T) {
 }
 
 func TestGetIconWithDownloadMode(t *testing.T) {
-	os.Setenv("SERVER_MODE", "download")
+	if err := os.Setenv("SERVER_MODE", "download"); err != nil {
+		t.Fatal(err)
+	}
 	req, err := http.NewRequest("GET", "/icon?url=apple.com&size=120", nil)
 	if err != nil {
 		log.Fatal(err)
@@ -164,7 +166,9 @@ func TestGetIconWithDownloadMode(t *testing.T) {
 	// Make sure we return some data
 	assertIntegerInInterval(t, 2000, 10000, len(w.Body.String()))
 
-	os.Setenv("SERVER_MODE", "")
+	if err := os.Setenv("SERVER_MODE", ""); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestGetIconWithFallBackURL(t *testing.T) {

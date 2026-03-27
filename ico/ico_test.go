@@ -50,7 +50,11 @@ func TestDecodeConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	imageConfig, _, err := image.DecodeConfig(f)
 
@@ -65,7 +69,11 @@ func TestDecodeConfigWithBrokenIco(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	imageConfig, _, err := image.DecodeConfig(f)
 
@@ -83,7 +91,11 @@ func TestParse256WidthHeightIco(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	imageConfig, _, err := image.DecodeConfig(f)
 

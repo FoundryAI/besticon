@@ -48,47 +48,61 @@ func logRequest(w io.Writer, req *http.Request) error {
 	if err != nil {
 		return fmt.Errorf("vcr: could not dump request: %s", err)
 	}
-	fmt.Fprint(w, string(b))
+	if _, err := fmt.Fprint(w, string(b)); err != nil {
+		return fmt.Errorf("vcr: could not write request: %s", err)
+	}
 	return nil
 }
 
-func dumpResonse(w io.Writer, r *http.Response, body []byte) {
+func dumpResonse(w io.Writer, r *http.Response, body []byte) error {
 	// Status line
 	text := r.Status
 	protoMajor, protoMinor := strconv.Itoa(r.ProtoMajor), strconv.Itoa(r.ProtoMinor)
 	statusCode := strconv.Itoa(r.StatusCode) + " "
 	text = strings.TrimPrefix(text, statusCode)
 	if _, err := io.WriteString(w, "HTTP/"+protoMajor+"."+protoMinor+" "+statusCode+text+"\r\n"); err != nil {
-		panic(err)
+		return fmt.Errorf("vcr: could not write response status line: %s", err)
 	}
 
-	r.Header.Write(w)
+	if err := r.Header.Write(w); err != nil {
+		return fmt.Errorf("vcr: could not write response headers: %s", err)
+	}
 
 	if _, err := io.WriteString(w, "\r\n"); err != nil {
-		panic(err)
+		return fmt.Errorf("vcr: could not write response separator: %s", err)
 	}
 
-	fmt.Fprint(w, string(body))
+	if _, err := fmt.Fprint(w, string(body)); err != nil {
+		return fmt.Errorf("vcr: could not write response body: %s", err)
+	}
+	return nil
 }
 
-func logResponse(w io.Writer, res *http.Response, body bool) {
+func logResponse(w io.Writer, res *http.Response, body bool) error {
 	var bodyBytes []byte
 	var err error
 	if body {
-		defer res.Body.Close()
+		defer func() {
+			if closeErr := res.Body.Close(); closeErr != nil {
+				fmt.Fprintf(os.Stderr, "could not close response body: %s", closeErr)
+			}
+		}()
 		bodyBytes, err = io.ReadAll(res.Body)
 		if err != nil {
-			fmt.Printf("could not record response: %s", err)
+			return fmt.Errorf("vcr: could not record response: %s", err)
 		}
 		res.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 	}
-	dumpResonse(w, res, bodyBytes)
+	return dumpResonse(w, res, bodyBytes)
 }
 
 const recordSeparator string = "*************vcr*************\n"
 
-func logSeparator(w io.Writer) {
-	fmt.Fprint(w, recordSeparator)
+func logSeparator(w io.Writer) error {
+	if _, err := fmt.Fprint(w, recordSeparator); err != nil {
+		return fmt.Errorf("vcr: could not write record separator: %s", err)
+	}
+	return nil
 }
 
 var defaultTransport = &http.Transport{}
@@ -107,9 +121,15 @@ func (t *recorderTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 		panic(err)
 	}
 
-	logRequest(t.writer, r)
-	logResponse(t.writer, resp, true)
-	logSeparator(t.writer)
+	if err := logRequest(t.writer, r); err != nil {
+		return nil, err
+	}
+	if err := logResponse(t.writer, resp, true); err != nil {
+		return nil, err
+	}
+	if err := logSeparator(t.writer); err != nil {
+		return nil, err
+	}
 
 	return resp, err
 }
