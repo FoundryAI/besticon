@@ -1,5 +1,9 @@
 build:
 	go build ./...
+
+format:
+	gofmt -w $$(find . -name '*.go' -not -path './.git/*')
+
 test_all: build test test_bench
 	go test -v github.com/mat/besticon/v3/besticon/iconserver
 
@@ -55,8 +59,14 @@ minify_css:
 gotags:
 	gotags -tag-relative=true -R=true -sort=true -f="tags" -fields=+l .
 
-staticcheck:
-	staticcheck ./...
+lint:
+	@command -v golangci-lint >/dev/null 2>&1 || { \
+		echo "golangci-lint is required for 'make lint' but is not installed."; \
+		echo "Install it first: https://golangci-lint.run"; \
+		echo "For Homebrew: brew install golangci-lint"; \
+		exit 1; \
+	}
+	golangci-lint run ./...
 
 #
 ## Building ##
